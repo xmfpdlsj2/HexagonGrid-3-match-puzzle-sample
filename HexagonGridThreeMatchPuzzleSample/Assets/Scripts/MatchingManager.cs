@@ -12,7 +12,7 @@ public class MatchingManager : MonoBehaviour
     [SerializeField]
     private float animTime = 0.5f;
 
-    private enum Direction
+    private enum DirectionLine
     {
         UP,
         DOWN,
@@ -23,8 +23,19 @@ public class MatchingManager : MonoBehaviour
 
         COUNT
     }
+    private enum DirectionCirCle
+    {
+        UP,
+        RIGHTUP,
+        RIGHTDOWN,
+        DOWN,
+        LEFTDOWN,
+        LEFTUP,
 
-    private Vector2Int[] dirCoordinate = new Vector2Int[6] 
+        COUNT
+    }
+
+    private Vector2Int[] dirCoordLine = new Vector2Int[6] 
     { 
         new Vector2Int(0, 2),
         new Vector2Int(0, -2),
@@ -33,6 +44,17 @@ public class MatchingManager : MonoBehaviour
         new Vector2Int(1, -1),
         new Vector2Int(-1, 1) 
     };
+    private Vector2Int[] dirCoordCircle = new Vector2Int[6]
+    {
+        new Vector2Int(0, 2),
+        new Vector2Int(1, 1),
+        new Vector2Int(1, -1),
+        new Vector2Int(0, -2),
+        new Vector2Int(-1, -1),
+        new Vector2Int(-1, 1)
+    };
+
+
 
     private const float LEAST_GAP = 1.5f;
     private readonly Vector2Int GENERATE_SPOT = new Vector2Int(3, 12);
@@ -43,6 +65,7 @@ public class MatchingManager : MonoBehaviour
 
     private bool isDropping = false;
 
+    private int comboCount = 0;
 
     private void Awake()
     {
@@ -83,15 +106,14 @@ public class MatchingManager : MonoBehaviour
         List<Vector2Int> lineMatch = new List<Vector2Int>();
         lineMatch.Add(start);
 
-        for (int i = 0; i < (int)Direction.COUNT; i++)
+        for (int i = 0; i < (int)DirectionLine.COUNT; i++)
         {
-            var next = start + dirCoordinate[i];
-
+            var next = start + dirCoordLine[i];
             if (gridMap.ContainsKey(next))
             {
                 if (gridMap[start].Block.Type == gridMap[next].Block.Type)
                 {
-                    LineCheck(start, dirCoordinate[i], lineMatch);
+                    LineCheck(start, dirCoordLine[i], lineMatch);
                 }
             }
 
@@ -106,6 +128,27 @@ public class MatchingManager : MonoBehaviour
             }
         }
 
+        for (int i = 0; i < (int)DirectionCirCle.COUNT; i++)
+        {
+            var next = start + dirCoordCircle[i];
+            if (gridMap.ContainsKey(next))
+            {
+                if (gridMap[start].Block.Type == gridMap[next].Block.Type)
+                {
+                    List<Vector2Int> lumpMatch = new List<Vector2Int>();
+                    lumpMatch.Add(start);
+                    lumpMatch.Add(start + dirCoordCircle[i]);
+                    LumpCheck(start, start + dirCoordCircle[i], i, lumpMatch);
+
+                    if (lumpMatch.Count >= 4)
+                    {
+                        totalMatch = totalMatch.Union(lumpMatch).ToList();
+                    }
+                }
+            }
+        }
+
+        totalMatch = totalMatch.Distinct().ToList();
         return totalMatch;
     }
 
@@ -114,13 +157,13 @@ public class MatchingManager : MonoBehaviour
         List<Vector2Int> topList = new List<Vector2Int>();
         foreach (var des in desCoordinate)
         {
-            for (int i = 0; i < (int)Direction.COUNT; i++)
+            for (int i = 0; i < (int)DirectionLine.COUNT; i++)
             {
-                if (gridMap.ContainsKey(des + dirCoordinate[i]))
+                if (gridMap.ContainsKey(des + dirCoordLine[i]))
                 {
-                    if (gridMap[des + dirCoordinate[i]].Block.Type == BlockType.TOP)
+                    if (gridMap[des + dirCoordLine[i]].Block.Type == BlockType.TOP)
                     {
-                        topList.Add(des + dirCoordinate[i]);
+                        topList.Add(des + dirCoordLine[i]);
                     }
                 }
             }
@@ -153,6 +196,34 @@ public class MatchingManager : MonoBehaviour
 
         matchBlocks.Add(next);
         LineCheck(next, dir, matchBlocks);
+    }
+
+    private void LumpCheck(Vector2Int start, Vector2Int pair, int pairDir, List<Vector2Int> lumpMatchBlocks)
+    {
+        var leftDir = ((pairDir - 1) + (int)DirectionCirCle.COUNT) % (int)DirectionCirCle.COUNT;
+        var sLeft = start + dirCoordCircle[leftDir];
+
+        if (gridMap.ContainsKey(sLeft) && gridMap[start].Block.Type == gridMap[sLeft].Block.Type)
+        {
+            var pLeft = pair + dirCoordCircle[leftDir];
+            lumpMatchBlocks.Add(sLeft);
+            if (gridMap.ContainsKey(pLeft) && gridMap[start].Block.Type == gridMap[pLeft].Block.Type)
+            {
+                lumpMatchBlocks.Add(pLeft);
+            }
+        }
+
+        var rightDir = ((pairDir + 1) + (int)DirectionCirCle.COUNT) % (int)DirectionCirCle.COUNT;
+        var sRight = start + dirCoordCircle[rightDir];
+        if (gridMap.ContainsKey(sRight) && gridMap[start].Block.Type == gridMap[sRight].Block.Type)
+        {
+            var pRight = pair + dirCoordCircle[rightDir];
+            lumpMatchBlocks.Add(sRight);
+            if (gridMap.ContainsKey(pRight) && gridMap[start].Block.Type == gridMap[pRight].Block.Type)
+            {
+                lumpMatchBlocks.Add(pRight);
+            }
+        }
     }
 
     public void TrySwitchingBlocks(Block block, Vector3 start, Vector3 to)
@@ -211,6 +282,8 @@ public class MatchingManager : MonoBehaviour
 
     private IEnumerator DestroyNGenerateBlocks(List<Vector2Int> desCoordinate)
     {
+        UIManager.Instance.Combo(++this.comboCount);
+
         var desTopList = MatchingCheckTop(desCoordinate);
         if (desTopList.Count != 0)
         {
@@ -248,6 +321,7 @@ public class MatchingManager : MonoBehaviour
         }
         else
         {
+            this.comboCount = 0;
             GameManager.Instance.IsInputPause = false;
         }
     }
@@ -296,7 +370,7 @@ public class MatchingManager : MonoBehaviour
     {
         foreach (var grid in gridMap)
         {
-            if (grid.Value.Block == null && !gridMap.ContainsKey(grid.Key + dirCoordinate[(int)Direction.UP]))
+            if (grid.Value.Block == null && !gridMap.ContainsKey(grid.Key + dirCoordLine[(int)DirectionLine.UP]))
             {
                 var pull = FindPullBlockSide(grid.Key);
                 if (pull == Vector2Int.zero)
@@ -323,7 +397,7 @@ public class MatchingManager : MonoBehaviour
         var next = start;
         while (true)
         {
-            next += dirCoordinate[(int)Direction.UP];
+            next += dirCoordLine[(int)DirectionLine.UP];
             if (next == GENERATE_SPOT)
             {
                 break;
@@ -353,11 +427,11 @@ public class MatchingManager : MonoBehaviour
         {
             if (start.x < GridManager.MAXGRID_SIZE_X / 2)
             {
-                start += dirCoordinate[(int)Direction.RIGHTUP];
+                start += dirCoordLine[(int)DirectionLine.RIGHTUP];
             }
             else
             {
-                start += dirCoordinate[(int)Direction.LEFTUP];
+                start += dirCoordLine[(int)DirectionLine.LEFTUP];
             }
 
             if (!gridMap.ContainsKey(start))
@@ -394,33 +468,33 @@ public class MatchingManager : MonoBehaviour
             angle += 360f;
         }
 
-        Direction dir = Direction.UP;
+        DirectionLine dir = DirectionLine.UP;
         if (angle <= 60.0f)
         {
-            dir = Direction.RIGHTUP;
+            dir = DirectionLine.RIGHTUP;
         }
         else if (angle <= 120.0f)
         {
-            dir = Direction.UP;
+            dir = DirectionLine.UP;
         }
         else if (angle <= 180.0f)
         {
-            dir = Direction.LEFTUP;
+            dir = DirectionLine.LEFTUP;
         }
         else if (angle <= 240.0f)
         {
-            dir = Direction.LEFTDOWN;
+            dir = DirectionLine.LEFTDOWN;
         }
         else if (angle <= 300.0f)
         {
-            dir = Direction.DOWN;
+            dir = DirectionLine.DOWN;
         }
         else
         {
-            dir = Direction.RIGHTDOWN;
+            dir = DirectionLine.RIGHTDOWN;
         }
 
-        return dirCoordinate[(int)dir];
+        return dirCoordLine[(int)dir];
     }
 }
 

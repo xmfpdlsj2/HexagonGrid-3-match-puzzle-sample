@@ -1,7 +1,5 @@
 using DG.Tweening;
 using System;
-using System.Threading;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,6 +15,13 @@ public class UIManager : MonoBehaviour
     private Text top = null;
 
     [SerializeField]
+    private Text combo = null;
+
+    [SerializeField]    
+    private Text score = null;
+    
+
+    [SerializeField]
     private RectTransform[] finishImages;
 
     [SerializeField]
@@ -28,6 +33,7 @@ public class UIManager : MonoBehaviour
 
     private int moveCount = 0;
 
+    private int currentScore = 0;
 
     private void Awake()
     {
@@ -54,6 +60,9 @@ public class UIManager : MonoBehaviour
 
         this.move.text = moveLimitCount.ToString();
         this.top.text = topCount.ToString();
+        this.currentScore = 0;
+        this.combo.text = currentScore.ToString();
+        this.score.text = currentScore.ToString();
     }
 
     public void MoveReduce()
@@ -77,6 +86,16 @@ public class UIManager : MonoBehaviour
         {
             GameManager.Instance.EndGame();
         }
+    }
+
+    public void Combo(int count)
+    {
+        this.combo.transform.DOPunchScale(Vector3.one, 0.3f, 7);
+        this.combo.text = count.ToString();
+
+        this.currentScore += (int)Math.Pow(count, count);
+        this.score.transform.DOPunchScale(Vector3.one, 0.3f, 7);
+        this.score.text = currentScore.ToString();
     }
 
     public void Finish()
