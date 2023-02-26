@@ -6,7 +6,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     private static GameManager instance;
-    public static GameManager Instance { get => instance; set => instance = value; }
+    public static GameManager Instance { get => instance; }
 
     [SerializeField]
     private Camera mainCamera;

@@ -19,7 +19,6 @@ public class UIManager : MonoBehaviour
 
     [SerializeField]    
     private Text score = null;
-    
 
     [SerializeField]
     private RectTransform[] finishImages;

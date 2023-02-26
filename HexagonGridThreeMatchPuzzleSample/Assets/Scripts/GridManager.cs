@@ -64,7 +64,6 @@ public class GridManager : MonoBehaviour
     }
 
 
-
     public Vector3 GetGirdPos(Vector2Int coordinate)
     {
         return new Vector3((coordinate.x - MAXGRID_SIZE_X / 2) * GRIDGAP_X,

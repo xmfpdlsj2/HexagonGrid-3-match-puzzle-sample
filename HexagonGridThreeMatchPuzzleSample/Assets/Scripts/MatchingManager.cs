@@ -7,7 +7,7 @@ using UnityEngine;
 public class MatchingManager : MonoBehaviour
 {
     private static MatchingManager instance;
-    public static MatchingManager Instance { get => instance; set => instance = value; }
+    public static MatchingManager Instance { get => instance; }
 
     [SerializeField]
     private float animTime = 0.5f;
@@ -55,8 +55,7 @@ public class MatchingManager : MonoBehaviour
     };
 
 
-
-    private const float LEAST_GAP = 1.5f;
+    private const float LEAST_DRAG = 1.5f;
     private readonly Vector2Int GENERATE_SPOT = new Vector2Int(3, 12);
 
     private Dictionary<Vector2Int, GridHexagon> gridMap = null;
@@ -228,7 +227,7 @@ public class MatchingManager : MonoBehaviour
 
     public void TrySwitchingBlocks(Block block, Vector3 start, Vector3 to)
     {
-        if (Vector3.Distance(start, to) < LEAST_GAP)
+        if (Vector3.Distance(start, to) < LEAST_DRAG)
         {
             Debug.Log("Too short to drag");
             GameManager.Instance.IsInputPause = false;
