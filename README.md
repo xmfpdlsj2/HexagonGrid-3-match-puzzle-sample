@@ -1,3 +1,3 @@
 # HexagonGrid-3-match-puzzle-sample
-Made a 3-match puzzle game sample on hexagon grid
-![HexaGrid-3-match-puzzle-sample](https://user-images.githubusercontent.com/17739857/221450754-0bb6153a-dc84-4034-a623-307e6d9bd520.JPG)
+
+![HexaGrid-3-match-puzzle-sample](https://user-images.githubusercontent.com/17739857/221451032-c09369db-b358-4947-a7a7-611f8a4989a5.JPG)
